@@ -38,9 +38,11 @@ class VGG(nn.Module):
 
     def __init__(self, vgg_name, batch_norm=False, num_classes=1000, init_weights=True):
         super(VGG, self).__init__()
+        ### creates vgg model upto last conv ###
         self.features = self.make_layers(cfg[vgg_name], batch_norm=batch_norm)
         self.name = vgg_name
         self.bn = batch_norm
+        ### creates flattened and dense pred layer ###
         self.classifier = nn.Sequential(
             nn.Linear(512 * 7 * 7, 4096),
             nn.ReLU(False),
@@ -91,16 +93,21 @@ class VGG(nn.Module):
 
     def _classify(self, x):
         for m in self.classifier: 
+            ### prediction occurs here ###
             x = m(x)
             if isinstance(m, nn.Linear):
                 if self.get_biases:
+                    ### collects bias of that layer ###
                     self.biases.append(m.bias)
                 if self.get_features:
+                    ### collects output/feature of that layer ###
                     self.feature_list.append(x)
         return x
 
     def forward(self, x):
+        ### x --> 1,224,224,3 ###
         x = self.organize_features(x)
+        ### reshaped or transposed ###
         x = x.view(x.size(0), -1)
         x = self._classify(x)
         return x
@@ -110,11 +117,14 @@ class VGG(nn.Module):
         count = 0
         x_feat = None
         for i in cfg[self.name]:
-
+            ### if maxpool layer ###
             if (i == 'M'):
+                ### self.features consists of base conv layers of vgg ###
                 x = self.features[count](x)
+            ### if not pool layer ###
             else:
                 if self.get_biases:
+                    ### create zeros (1,224,224,3) ###
                     input_bias = torch.zeros(x.size()).to(x.device)
                     input_bias, _ = self._linear_block(input_bias, count)
                     self.biases.append(input_bias.detach())
@@ -125,7 +135,7 @@ class VGG(nn.Module):
 
                 x = self.features[count](x)
 
-            count = count + 1
+            count+= 1
 
         return x
 
