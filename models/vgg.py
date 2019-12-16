@@ -72,6 +72,8 @@ class VGG(nn.Module):
         self.biases = [0]
 
         x = torch.zeros(1,3,224,224) #put in GPU
+        ### self.foward [updates] sef.biases and self.feature_list in self.organize_features methods ###
+        ### first element of self.biases is 0 as only conv biases are required ###
         _ = self.forward(x)
         self.get_biases = False
         return self.biases
